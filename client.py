@@ -17,9 +17,11 @@ model = os.environ["LM_MODEL"]
 
 # --- Messaggi -------------------------------------------------------------
 system = {"role": "system", "content": "Sei un assistente che risponde in italiano, in modo breve e chiaro."}
+# Cronologia solo in memoria: si perde alla chiusura del programma.
+messages = [system]
 
 # --- Ciclo ----------------------------------------------------------------
-# Ogni domanda e' indipendente: nessuna cronologia tra un giro e l'altro.
+# La cronologia completa viene inviata a ogni richiesta.
 print("Scrivere una domanda ('esci' o Ctrl+C per terminare).")
 try:
     while True:
@@ -30,9 +32,11 @@ try:
             break
 
         # --- Payload ------------------------------------------------------
+        # La domanda entra in messages solo se la richiesta riesce.
+        user = {"role": "user", "content": domanda}
         payload = {
             "model": model,
-            "messages": [system, {"role": "user", "content": domanda}],
+            "messages": messages + [user],
             "temperature": 0.2,
             "max_tokens": 512,
             "reasoning_effort": "none",
@@ -43,7 +47,10 @@ try:
         try:
             response = requests.post(f"{base_url}/chat/completions", json=payload, timeout=60)
             response.raise_for_status()
-            print(response.json()["choices"][0]["message"]["content"])
+            risposta = response.json()["choices"][0]["message"]["content"]
+            messages.append(user)
+            messages.append({"role": "assistant", "content": risposta})
+            print(risposta)
         except requests.exceptions.Timeout:
             print("Attesa scaduta: controllare server, carico e tempi.")
         except requests.exceptions.ConnectionError:
