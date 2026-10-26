@@ -20,3 +20,17 @@ def test_risposta_non_vuota():
     grafo = costruisci_grafo(crea_modello(cfg, id_modello))
     stato = grafo.invoke({"messaggi": [HumanMessage("Rispondi solo: ok")], "passaggi": 0})
     assert stato["messaggi"][-1].content.strip()
+
+
+def test_modello_richiede_strumento():
+    from langchain_core.messages import ToolMessage
+
+    from assistente.strumenti import STRUMENTI
+
+    cfg = leggi_configurazione(os.environ)
+    id_modello = scegli_modello(cfg, elenca_modelli(cfg.base_url))
+    grafo = costruisci_grafo(crea_modello(cfg, id_modello, STRUMENTI), cfg.max_passaggi)
+    stato = grafo.invoke({"messaggi": [HumanMessage("Che ore sono a Roma adesso?")], "passaggi": 0})
+    risultati = [m for m in stato["messaggi"] if isinstance(m, ToolMessage)]
+    assert risultati, "il modello non ha richiesto lo strumento orologio"
+    assert risultati[0].name == "ora_corrente"

@@ -34,12 +34,26 @@ $env:LMSTUDIO_MODEL = "google/gemma-4-e2b"
 python -m assistente          # 'exit' o Ctrl+D per uscire; la cronologia vale solo per la sessione
 ```
 
+## Strumento orologio e grafo
+Il grafo ha due nodi, `modello` e `strumenti`, più un nodo `limite`. Dopo `modello`: se ci sono
+richieste di strumento si passa a `strumenti` (e si torna a `modello`), altrimenti si termina;
+raggiunto `MAX_PASSAGGI` turni del modello nella stessa domanda si passa a `limite`, che chiude
+con un messaggio e mantiene valida la cronologia.
+
+Lo strumento `ora_corrente(fuso_orario)` richiede un nome IANA (es. `Europe/Rome`). Ogni chiamata e
+il suo risultato compaiono nei log (stderr), per esempio:
+```
+INFO assistente.grafo: Chiamata strumento ora_corrente con argomenti {'fuso_orario': 'Asia/Tokyo'}
+```
+
 ## Prova reale con LM Studio
 ```powershell
 python -m pytest -m reale -v   # richiede LMSTUDIO_BASE_URL e LMSTUDIO_MODEL
+# include test_modello_richiede_strumento: verifica che il modello chieda davvero lo strumento
 ```
 
 ## Diagnosi
 - `Errore: Variabile LMSTUDIO_BASE_URL mancante`: imposta la variabile.
 - `LM Studio non raggiungibile`: avvia il server locale in LM Studio e controlla la porta.
 - `Il modello ... non è presente sul server`: usa uno degli id elencati.
+- Il modello non usa lo strumento: i log non mostrano `Chiamata strumento`; prova un modello con supporto al tool calling.

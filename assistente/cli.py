@@ -8,6 +8,7 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from assistente.config import ErroreConfigurazione, leggi_configurazione
 from assistente.grafo import costruisci_grafo
 from assistente.modello import ErroreModello, crea_modello, elenca_modelli, scegli_modello
+from assistente.strumenti import STRUMENTI
 
 USCITA = {"exit", "esci"}
 
@@ -27,7 +28,7 @@ def main(env=os.environ, input_fn=input, stampa=print, elenca=elenca_modelli, cr
         stampa(f"Errore: {errore}")
         return 2
 
-    grafo = costruisci_grafo(crea(cfg, id_modello))
+    grafo = costruisci_grafo(crea(cfg, id_modello, STRUMENTI), cfg.max_passaggi)
     cronologia: list[BaseMessage] = []
     stampa(f"Modello: {id_modello}. Scrivi 'exit' o premi Ctrl+D per uscire.")
     while True:
