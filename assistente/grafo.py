@@ -40,11 +40,14 @@ def costruisci_grafo(modello, max_passaggi: int = 5, strumenti=STRUMENTI):
 
     def nodo_strumenti(stato: Stato) -> dict:
         risultati = []
-        for richiesta in stato["messaggi"][-1].tool_calls:
+        ultimo = stato["messaggi"][-1]
+        for richiesta in (*ultimo.tool_calls, *ultimo.invalid_tool_calls):
             nome, argomenti = richiesta["name"], richiesta["args"]
             log.info("Chiamata strumento %s con argomenti %s", nome, argomenti)
             strumento = per_nome.get(nome)
-            if strumento is None:
+            if richiesta.get("type") == "invalid_tool_call":
+                esito = f"Errore: argomenti non validi per {nome}: {richiesta.get('error')}"
+            elif strumento is None:
                 esito = f"Errore: strumento sconosciuto: {nome}"
             else:
                 try:
@@ -63,7 +66,8 @@ def costruisci_grafo(modello, max_passaggi: int = 5, strumenti=STRUMENTI):
         return {"messaggi": [senza_richieste, AIMessage(MESSAGGIO_LIMITE)]}
 
     def dopo_modello(stato: Stato) -> Literal["strumenti", "limite", "fine"]:
-        if not stato["messaggi"][-1].tool_calls:
+        ultimo = stato["messaggi"][-1]
+        if not (ultimo.tool_calls or ultimo.invalid_tool_calls):
             return "fine"
         return "strumenti" if stato["passaggi"] < max_passaggi else "limite"
 

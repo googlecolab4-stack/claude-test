@@ -112,3 +112,32 @@ def test_log_chiamata_strumento(caplog):
         parte(ModelloFinto([richiesta("Europe/Rome"), "ok"]))
     testo = caplog.text
     assert "ora_corrente" in testo and "Europe/Rome" in testo
+
+
+def richiesta_non_valida(id_):
+    return {"name": "ora_corrente", "args": "xx", "id": id_, "error": "JSON non valido", "type": "invalid_tool_call"}
+
+
+def senza_risposta_tutte(messaggi):
+    risposti = {m.tool_call_id for m in messaggi if isinstance(m, ToolMessage)}
+    ids = [c["id"] for m in messaggi if isinstance(m, AIMessage) for c in (*m.tool_calls, *m.invalid_tool_calls)]
+    return [i for i in ids if i not in risposti]
+
+
+def test_richieste_con_json_non_valido_ricevono_risposta():
+    mista = AIMessage(
+        "",
+        tool_calls=[{"name": "ora_corrente", "args": {"fuso_orario": "Europe/Rome"}, "id": "ok"}],
+        invalid_tool_calls=[richiesta_non_valida("ko")],
+    )
+    stato = parte(ModelloFinto([mista, "fine"]))
+    assert senza_risposta_tutte(stato["messaggi"]) == []
+    errori = [m for m in stato["messaggi"] if isinstance(m, ToolMessage) and m.tool_call_id == "ko"]
+    assert errori and errori[0].content.startswith("Errore")
+
+
+def test_solo_richieste_non_valide_proseguono():
+    solo = AIMessage("", invalid_tool_calls=[richiesta_non_valida("ko")])
+    stato = parte(ModelloFinto([solo, "recuperato"]))
+    assert senza_risposta_tutte(stato["messaggi"]) == []
+    assert stato["messaggi"][-1].content == "recuperato"

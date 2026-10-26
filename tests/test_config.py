@@ -40,3 +40,12 @@ def test_modello_non_in_elenco():
 def test_modello_presente():
     cfg = leggi_configurazione({**BASE, "LMSTUDIO_MODEL": "a/b"})
     assert scegli_modello(cfg, ["a/b", "c/d"]) == "a/b"
+
+
+def test_log_level_non_valido():
+    with pytest.raises(ErroreConfigurazione, match="LOG_LEVEL"):
+        leggi_configurazione({**BASE, "LOG_LEVEL": "verbose"})
+
+
+def test_log_level_minuscolo_accettato():
+    assert leggi_configurazione({**BASE, "LOG_LEVEL": "debug"}).log_level == "DEBUG"

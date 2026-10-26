@@ -3,6 +3,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 
+LIVELLI_LOG = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+
+
 class ErroreConfigurazione(Exception):
     pass
 
@@ -28,9 +31,12 @@ def leggi_configurazione(env: Mapping[str, str] = os.environ) -> Configurazione:
         max_passaggi = 0
     if max_passaggi < 1:
         raise ErroreConfigurazione(f"MAX_PASSAGGI deve essere un intero >= 1 (ricevuto {grezzo!r}).")
+    log_level = env.get("LOG_LEVEL", "INFO").upper()
+    if log_level not in LIVELLI_LOG:
+        raise ErroreConfigurazione(f"LOG_LEVEL non valido: {log_level!r} (usa {', '.join(sorted(LIVELLI_LOG))}).")
     return Configurazione(
         base_url=base_url,
         modello=env.get("LMSTUDIO_MODEL", "").strip() or None,
         max_passaggi=max_passaggi,
-        log_level=env.get("LOG_LEVEL", "INFO").upper(),
+        log_level=log_level,
     )
