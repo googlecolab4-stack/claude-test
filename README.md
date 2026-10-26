@@ -52,6 +52,17 @@ python -m pytest -m reale -v   # richiede LMSTUDIO_BASE_URL e LMSTUDIO_MODEL
 # include test_modello_richiede_strumento: verifica che il modello chieda davvero lo strumento
 ```
 
+## Docker Compose (LM Studio resta sull'host)
+Verificato: `docker compose config` valida il file. **Non ancora verificati** (demone Docker spento
+durante lo sviluppo): `docker build` e l'esecuzione nel container.
+```powershell
+Copy-Item .env.example .env        # imposta LMSTUDIO_MODEL; LMSTUDIO_BASE_URL viene ignorato da Compose
+docker compose config              # verifica la configurazione
+docker compose run --rm assistente # conversazione interattiva; i log dello strumento compaiono nel terminale
+```
+Compose imposta `LMSTUDIO_BASE_URL=http://host.docker.internal:1234/v1`. I test (`pytest`) si eseguono in locale:
+l'immagine contiene solo le dipendenze di runtime.
+
 ## Diagnosi
 - `Errore: Variabile LMSTUDIO_BASE_URL mancante`: imposta la variabile.
 - `LM Studio non raggiungibile`: avvia il server locale in LM Studio e controlla la porta.
