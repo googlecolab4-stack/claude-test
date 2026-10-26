@@ -1,8 +1,14 @@
 from typing import Annotated, TypedDict
 
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
+
+
+PROMPT_SISTEMA = (
+    "Sei un assistente del laboratorio. Rispondi in italiano in modo breve e chiaro. "
+    "Per conoscere data e ora usa lo strumento orologio, se disponibile."
+)
 
 
 class Stato(TypedDict):
@@ -22,7 +28,7 @@ class ModelloFisso:
 
 def costruisci_grafo(modello):
     def nodo_modello(stato: Stato) -> dict:
-        risposta = modello.invoke(stato["messaggi"])
+        risposta = modello.invoke([SystemMessage(PROMPT_SISTEMA), *stato["messaggi"]])
         return {"messaggi": [risposta], "passaggi": stato["passaggi"] + 1}
 
     grafo = StateGraph(Stato)
